@@ -116,7 +116,7 @@ public class IonStructCaseInsensitiveDecorator extends IonContainerCaseInsensiti
         return new IonStructCaseInsensitiveDecorator(ionStruct.clone());
     }
 
-    private String findCaseInsensitiveFieldMatch(String fieldName) {
+    private String findCaseInsensitiveFieldMatch(final String fieldName) {
         for (IonValue v : ionStruct) {
             if (fieldName.equalsIgnoreCase(v.getFieldName())) {
                 return v.getFieldName();
@@ -125,7 +125,7 @@ public class IonStructCaseInsensitiveDecorator extends IonContainerCaseInsensiti
         return null;
     }
 
-    private boolean hasCaseInsensitiveFieldMatch(Object fieldName) {
+    private boolean hasCaseInsensitiveFieldMatch(final Object fieldName) {
         if (fieldName instanceof String) {
             return findCaseInsensitiveFieldMatch((String)fieldName) != null;
         } else {

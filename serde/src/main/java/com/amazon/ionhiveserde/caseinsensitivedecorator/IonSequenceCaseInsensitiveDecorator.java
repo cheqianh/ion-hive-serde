@@ -21,12 +21,14 @@ import com.amazon.ion.IonValue;
 import com.amazon.ion.NullValueException;
 import com.amazon.ion.UnknownSymbolException;
 import com.amazon.ion.ValueFactory;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
+import org.jetbrains.annotations.NotNull;
+
+
 
 
 public class IonSequenceCaseInsensitiveDecorator extends IonContainerCaseInsensitiveDecorator implements IonSequence {
