@@ -16,6 +16,8 @@
 package com.amazon.ionhiveserde.formats;
 
 import com.amazon.ionhiveserde.IonHiveSerDe;
+
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Properties;
@@ -28,11 +30,14 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
+import org.apache.hadoop.util.ReflectionUtils;
 
 /**
  * <p>
@@ -69,10 +74,23 @@ public class IonOutputFormat extends FileOutputFormat<Object, Writable> implemen
                                                              final Progressable progress)
         throws IOException {
 
-        final FileSystem fs = finalOutPath.getFileSystem(jc);
-        final OutputStream out = fs.create(finalOutPath, progress);
+        if (isCompressed) {
+            Class<? extends CompressionCodec> codecClass =
+                    getOutputCompressorClass(jc, GzipCodec.class);
+            // create the named codec
+            CompressionCodec codec = ReflectionUtils.newInstance(codecClass, jc);
+            // build the filename including the extension
+            Path file = FileOutputFormat.getTaskOutputPath(jc,
+                            finalOutPath.getName() + codec.getDefaultExtension());
+            FileSystem fs = file.getFileSystem(jc);
+            FSDataOutputStream fileOut = fs.create(file, progress);
+            return new IonRecordWriter(new DataOutputStream(codec.createOutputStream(fileOut)));
+        } else {
+            final FileSystem fs = finalOutPath.getFileSystem(jc);
+            final OutputStream out = fs.create(finalOutPath, progress);
+            return new IonRecordWriter(out);
+        }
 
-        return new IonRecordWriter(out);
     }
 
     private static class IonRecordWriter implements FileSinkOperator.RecordWriter {
