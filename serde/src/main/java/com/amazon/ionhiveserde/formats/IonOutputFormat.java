@@ -31,6 +31,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -74,11 +75,16 @@ public class IonOutputFormat extends FileOutputFormat<Object, Writable> implemen
                                                              final Progressable progress)
         throws IOException {
 
+        // I believe we should expect the following to hold:
+        // isCompressed == FileOutputFormat.getCompressOutput(jc);
+        // A layer farther up should be getting this flag from the job configuration
         if (isCompressed) {
             Class<? extends CompressionCodec> codecClass =
                     getOutputCompressorClass(jc, GzipCodec.class);
             // create the named codec
-            CompressionCodec codec = ReflectionUtils.newInstance(codecClass, jc);
+            CompressionCodecFactory factory = new CompressionCodecFactory(jc);
+            CompressionCodec codec = factory.getCodecByClassName(codecClass.getCanonicalName());
+                             codec = ReflectionUtils.newInstance(codecClass, jc);
             // build the filename including the extension
             Path file = FileOutputFormat.getTaskOutputPath(jc,
                             finalOutPath.getName() + codec.getDefaultExtension());
