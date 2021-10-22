@@ -107,13 +107,14 @@ public class IonInputFormat extends FileInputFormat {
             this.compressionCodecs = new CompressionCodecFactory(job);
             final CompressionCodec codec = compressionCodecs.getCodec(path);
 
+            try (InputStream binCheck = fs.open(path)) {
+                isBinary = isBinary(binCheck);
+            }
+
             FSDataInputStream inputStream = fs.open(path);
             baseStream = inputStream;
 
             in = (codec == null) ? inputStream : codec.createInputStream(inputStream);
-
-            isBinary = isBinary(in);
-            in.reset(); //TODO: If this blows up then we have to re-open the stream
 
             properties = new HadoopProperties(new HadoopConfigurationAdapter(job));
 
