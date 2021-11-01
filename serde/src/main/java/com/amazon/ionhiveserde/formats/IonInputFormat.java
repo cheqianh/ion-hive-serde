@@ -23,7 +23,6 @@ import com.amazon.ionhiveserde.IonFactory;
 import com.amazon.ionhiveserde.configuration.HadoopProperties;
 import com.amazon.ionhiveserde.configuration.source.HadoopConfigurationAdapter;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -100,7 +99,7 @@ public class IonInputFormat extends FileInputFormat {
 
             start = fileSplit.getStart();
             if (start != 0) {
-                // TODO: Panic and die, we can't handle this
+                throw new IOException(String.format("File split is at position %d, expected 0.", start));
             }
             end = start + fileSplit.getLength();
 
