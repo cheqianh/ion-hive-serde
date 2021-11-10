@@ -69,10 +69,7 @@ public class IonInputFormat extends FileInputFormat {
     }
 
     private static class IonRecordReader implements RecordReader<LongWritable, BytesWritable> {
-        private final CompressionCodecFactory compressionCodecs;
-
-        private final Seekable baseStream; // this may be compressed
-        private final InputStream in; // this may be identically baseStream, or may be decompressed
+        private final InputStream in;
 
         private final HadoopProperties properties;
         private final IonFactory ionFactory;
@@ -94,26 +91,18 @@ public class IonInputFormat extends FileInputFormat {
 
         IonRecordReader(final FileSplit fileSplit, final JobConf job)
                 throws IOException {
-            final Path path = fileSplit.getPath();
-            final FileSystem fs = path.getFileSystem(job);
-
             start = fileSplit.getStart();
+            // We don't handle the case that a FileSplit is starting at a position other than 0.
             if (start != 0) {
                 throw new IOException(String.format("File split is at position %d, expected 0.", start));
             }
             end = start + fileSplit.getLength();
 
-            this.compressionCodecs = new CompressionCodecFactory(job);
-            final CompressionCodec codec = compressionCodecs.getCodec(path);
-
-            try (InputStream binCheck = fs.open(path)) {
+            try (InputStream binCheck = getInputStream(fileSplit, job)) {
                 isBinary = isBinary(binCheck);
             }
 
-            FSDataInputStream inputStream = fs.open(path);
-            baseStream = inputStream;
-
-            in = (codec == null) ? inputStream : codec.createInputStream(inputStream);
+            in = getInputStream(fileSplit, job);
 
             properties = new HadoopProperties(new HadoopConfigurationAdapter(job));
 
@@ -122,6 +111,18 @@ public class IonInputFormat extends FileInputFormat {
             reader = ionFactory.newReader(in);
 
             out = new ByteArrayOutputStream();
+        }
+
+        private InputStream getInputStream(final FileSplit fileSplit, final JobConf job) throws IOException {
+            final Path path = fileSplit.getPath();
+            final FileSystem fs = path.getFileSystem(job);
+
+            CompressionCodecFactory compressionCodecs = new CompressionCodecFactory(job);
+            final CompressionCodec codec = compressionCodecs.getCodec(path);
+
+            FSDataInputStream inputStream = fs.open(path);
+
+            return (codec == null) ? inputStream : codec.createInputStream(inputStream);
         }
 
         @Override
@@ -134,9 +135,11 @@ public class IonInputFormat extends FileInputFormat {
             return new BytesWritable();
         }
 
+        // CompressionInputStream and FSDataInputStream are both Seekable, but have no common
+        // Seekable parents. We can confidently cast our InputStream to Seekable.
         @Override
         public final long getPos() throws IOException {
-            return baseStream.getPos();
+            return ((Seekable)in).getPos();
         }
 
         @Override
