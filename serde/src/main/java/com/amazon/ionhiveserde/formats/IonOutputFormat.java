@@ -51,7 +51,7 @@ public class IonOutputFormat extends FileOutputFormat<Object, Writable> implemen
                                                           final JobConf job,
                                                           final String name,
                                                           final Progressable progress)
-            throws IOException {
+        throws IOException {
 
         final Path path = FileOutputFormat.getTaskOutputPath(job, name);
         final FileSystem fs = path.getFileSystem(job);
@@ -67,7 +67,7 @@ public class IonOutputFormat extends FileOutputFormat<Object, Writable> implemen
                                                              final boolean isCompressed,
                                                              final Properties tableProperties,
                                                              final Progressable progress)
-            throws IOException {
+        throws IOException {
 
         final FileSystem fs = finalOutPath.getFileSystem(jc);
         final OutputStream out = fs.create(finalOutPath, progress);

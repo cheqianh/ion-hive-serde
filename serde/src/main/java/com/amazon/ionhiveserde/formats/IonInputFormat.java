@@ -57,7 +57,7 @@ public class IonInputFormat extends FileInputFormat {
 
     @Override
     public RecordReader getRecordReader(final InputSplit split, final JobConf job, final Reporter reporter)
-            throws IOException {
+        throws IOException {
 
         LOG.fatal(job);
 
@@ -185,8 +185,8 @@ public class IonInputFormat extends FileInputFormat {
 
         private IonWriter newWriter(final ByteArrayOutputStream out) {
             return isBinary
-                    ? ionFactory.newBinaryWriter(out)
-                    : ionFactory.newTextWriter(out);
+                ? ionFactory.newBinaryWriter(out)
+                : ionFactory.newTextWriter(out);
         }
     }
 }
