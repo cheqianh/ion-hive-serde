@@ -148,8 +148,8 @@ public class IonInputFormat extends FileInputFormat {
         }
 
         @Override
-        // We don't know why progress is equal to 0 instead of 1 when start == end, what Hadoop is doing since long
-        // times ago is just setting this to 0.
+        // We don't know why `progress` is equal to 0 instead of 1 when start == end, what Hadoop is doing since long
+        // times ago is setting it to 0.
         public final float getProgress() throws IOException {
             float size = (this.end - this.start);
             float progress = (this.getPos() - this.start);
