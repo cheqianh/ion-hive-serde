@@ -147,9 +147,14 @@ public class IonInputFormat extends FileInputFormat {
             this.in.close();
         }
 
-        @Override
         // We don't know why `progress` is equal to 0 instead of 1 when start == end, what Hadoop is doing since long
         // times ago is setting it to 0.
+        //
+        // References:
+        // * The original split support issue: https://issues.apache.org/jira/browse/HADOOP-451
+        // * The original patch that introduced this: https://svn.apache.org/viewvc/lucene/hadoop/trunk/src/java/org/apa
+        // che/hadoop/mapred/TextInputFormat.java?r1=469596&r2=488438&pathrev=502021&diff_format=h
+        @Override
         public final float getProgress() throws IOException {
             float size = (this.end - this.start);
             float progress = (this.getPos() - this.start);
