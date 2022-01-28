@@ -52,20 +52,20 @@ allprojects {
         testCompile "pl.pragmatists:JUnitParams:[1.1.0,1.2.0)"
     }
 
-    apply plugin: 'checkstyle'
-    checkstyle {
-        toolVersion = "8.18"
-        ignoreFailures = false
-        maxWarnings = 0
-        maxErrors = 0
-        configDir = file("$rootProject.projectDir/config/checkstyle")
-    }
-    tasks.withType(Checkstyle) {
-        reports {
-            xml.enabled = false
-            html.enabled = true
-        }
-    }
+//    apply plugin: 'checkstyle'
+//    checkstyle {
+//        toolVersion = "8.18"
+//        ignoreFailures = false
+//        maxWarnings = 0
+//        maxErrors = 0
+//        configDir = file("$rootProject.projectDir/config/checkstyle")
+//    }
+//    tasks.withType(Checkstyle) {
+//        reports {
+//            xml.enabled = false
+//            html.enabled = true
+//        }
+//    }
 }
 
 // clean all subprojects

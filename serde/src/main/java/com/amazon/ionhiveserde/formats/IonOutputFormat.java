@@ -16,6 +16,8 @@
 package com.amazon.ionhiveserde.formats;
 
 import com.amazon.ionhiveserde.IonHiveSerDe;
+
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Properties;
@@ -28,11 +30,15 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
+import org.apache.hadoop.util.ReflectionUtils;
 
 /**
  * <p>
@@ -46,13 +52,13 @@ import org.apache.hadoop.util.Progressable;
  */
 public class IonOutputFormat extends FileOutputFormat<Object, Writable> implements HiveOutputFormat<Object, Writable> {
 
+    // Doesn't call this method during insert operation
     @Override
     public RecordWriter<Object, Writable> getRecordWriter(final FileSystem ignored,
                                                           final JobConf job,
                                                           final String name,
                                                           final Progressable progress)
-        throws IOException {
-
+            throws IOException {
         final Path path = FileOutputFormat.getTaskOutputPath(job, name);
         final FileSystem fs = path.getFileSystem(job);
         final FSDataOutputStream fileOut = fs.create(path, progress);
@@ -67,16 +73,33 @@ public class IonOutputFormat extends FileOutputFormat<Object, Writable> implemen
                                                              final boolean isCompressed,
                                                              final Properties tableProperties,
                                                              final Progressable progress)
-        throws IOException {
+            throws IOException {
+        // I believe we should expect the following to hold:
+        // isCompressed == FileOutputFormat.getCompressOutput(jc);
+        // A layer farther up should be getting this flag from the job configuration
 
-        final FileSystem fs = finalOutPath.getFileSystem(jc);
-        final OutputStream out = fs.create(finalOutPath, progress);
+        if (isCompressed) {
+            Class<? extends CompressionCodec> codecClass =
+                    getOutputCompressorClass(jc, GzipCodec.class);
+            // create the named codec
+            CompressionCodecFactory factory = new CompressionCodecFactory(jc);
+            CompressionCodec codec = factory.getCodecByClassName(codecClass.getCanonicalName());
+//            codec = ReflectionUtils.newInstance(codecClass, jc);
+            // build the filename including the extension
+            Path file = FileOutputFormat.getTaskOutputPath(jc,
+                    finalOutPath.getName() + codec.getDefaultExtension());
+            FileSystem fs = file.getFileSystem(jc);
+            FSDataOutputStream fileOut = fs.create(file, progress);
+            return new IonRecordWriter(new DataOutputStream(codec.createOutputStream(fileOut)));
+        } else {
+            final FileSystem fs = finalOutPath.getFileSystem(jc);
+            final OutputStream out = fs.create(finalOutPath, progress);
+            return new IonRecordWriter(out);
+        }
 
-        return new IonRecordWriter(out);
     }
 
     private static class IonRecordWriter implements FileSinkOperator.RecordWriter {
-
         private final OutputStream out;
 
         IonRecordWriter(final OutputStream out) {
@@ -116,6 +139,7 @@ public class IonOutputFormat extends FileOutputFormat<Object, Writable> implemen
         }
     }
 
+    // Doesn't call this method during insert operation
     private static class HadoopAdapter implements RecordWriter<Object, Writable> {
 
         private final IonRecordWriter recordWriter;
