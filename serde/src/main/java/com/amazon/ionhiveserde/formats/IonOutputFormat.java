@@ -79,13 +79,7 @@ public class IonOutputFormat extends FileOutputFormat<Object, Writable> implemen
         // A layer farther up should be getting this flag from the job configuration
 
         if (isCompressed) {
-            Class<? extends CompressionCodec> codecClass =
-                    getOutputCompressorClass(jc, GzipCodec.class);
-            // create the named codec
-            CompressionCodecFactory factory = new CompressionCodecFactory(jc);
-            CompressionCodec codec = factory.getCodecByClassName(codecClass.getCanonicalName());
-//            codec = ReflectionUtils.newInstance(codecClass, jc);
-            // build the filename including the extension
+            CompressionCodec codec = getCompressionCodec(jc);
             Path file = FileOutputFormat.getTaskOutputPath(jc,
                     finalOutPath.getName() + codec.getDefaultExtension());
             FileSystem fs = file.getFileSystem(jc);
@@ -97,6 +91,13 @@ public class IonOutputFormat extends FileOutputFormat<Object, Writable> implemen
             return new IonRecordWriter(out);
         }
 
+    }
+
+    public static CompressionCodec getCompressionCodec(final JobConf jc) {
+        CompressionCodecFactory factory = new CompressionCodecFactory(jc);
+        String name = jc.get(org.apache.hadoop.mapreduce.lib.output.
+                FileOutputFormat.COMPRESS_CODEC);
+        return factory.getCodecByName(name);
     }
 
     private static class IonRecordWriter implements FileSinkOperator.RecordWriter {
