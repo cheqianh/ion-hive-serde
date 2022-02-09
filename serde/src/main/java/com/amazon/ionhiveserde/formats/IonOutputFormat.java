@@ -21,6 +21,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Properties;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -77,7 +81,6 @@ public class IonOutputFormat extends FileOutputFormat<Object, Writable> implemen
         // I believe we should expect the following to hold:
         // isCompressed == FileOutputFormat.getCompressOutput(jc);
         // A layer farther up should be getting this flag from the job configuration
-
         if (isCompressed) {
             CompressionCodec codec = getCompressionCodec(jc);
             Path file = FileOutputFormat.getTaskOutputPath(jc,
